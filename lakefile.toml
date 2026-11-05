@@ -1,0 +1,6 @@
+name = "diophantine_zq_prototype"
+version = "0.1.0"
+defaultTargets = ["DiophantineZQ"]
+
+[[lean_lib]]
+name = "DiophantineZQ"

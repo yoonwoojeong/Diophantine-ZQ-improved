@@ -1,0 +1,10 @@
+/.lake/
+/build/
+*.olean
+*.ilean
+*.c
+*.trace
+__pycache__/
+*.pyc
+.DS_Store
+.env
