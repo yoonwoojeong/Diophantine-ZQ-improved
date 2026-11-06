@@ -1,30 +1,28 @@
 # Diophantine-ZQ-improved
 
-Formally verified mathematical proofs checking individual component lemmas from Elliot Glazer's construction ([`elliotglazer/diophantine-z-q`](https://github.com/elliotglazer/diophantine-z-q)).
+Formally verified theorems for Elliot Glazer’s Diophantine definition of $\mathbb{Z}$ in $\mathbb{Q}$ ([`elliotglazer/diophantine-z-q`](https://github.com/elliotglazer/diophantine-z-q)).
 
-## Proven Statements
+## Theorems
 
-The following statements are fully proved in [`DiophantineZQ.lean`](DiophantineZQ.lean) and verified against [`Challenge.lean`](Challenge.lean) with no unproven steps (`sorry`):
+All theorems are fully proved in [`DiophantineZQ.lean`](DiophantineZQ.lean) and verified against [`Challenge.lean`](Challenge.lean):
 
-1. **Lucas's Theorem for Bitwise Submasks (`choose_odd_iff_land_eq`, `mask_iff_land_eq`)**:
-   For all natural numbers $a$ and $b$, $\binom{b}{a}$ is odd if and only if $a \mathbin{\&} b = a$.
+### Theorem 1 (Lucas's Theorem for Submasks)
+For any $a, b \in \mathbb{N}$:
+$$\binom{b}{a} \equiv 1 \pmod 2 \iff a \mathbin{\&} b = a$$
 
-2. **Carry-Free History Decoding (`packed_register_decode`)**:
-   For integers encoded in base $B$ with digits strictly less than $K < B$, the equation:
-   $$R + B \cdot C = \text{init} + B \cdot R + B \cdot A$$
-   uniquely recovers the initial value $\rho_0 = \text{init}$, every transition $\rho_{t+1} + \gamma_t = \rho_t + \alpha_t$, and the final state.
+### Theorem 2 (Carry-Free Register Decoding)
+Let $K < B$. For any execution history where register values $\rho(t) < K$ and step changes $\alpha(t), \gamma(t) \le 1$, the packed integer equation:
+$$\sum_{t=0}^q \rho(t) B^t + B \sum_{t=0}^q \gamma(t) B^t = \text{init} + B \sum_{t=0}^q \rho(t) B^t + B \sum_{t=0}^q \alpha(t) B^t$$
+uniquely determines:
+1. Initial state: $\rho(0) = \text{init}$
+2. Transition steps: $\rho(t+1) + \gamma(t) = \rho(t) + \alpha(t)$ for all $t < q$
+3. Final state: $\gamma(q) = \rho(q) + \alpha(q)$
 
-3. **Single-Digit Zero Test (`complement_mask_iff_zero_test`)**:
-   For any single digit $r \le 2^c - 1$ and indicator $z \in \{0, 1\}$:
-   $$r \mathbin{\&} ((2^c - 1)(1 - z)) = r \iff (z = 1 \implies r = 0)$$
+### Theorem 3 (Single-Digit Zero-Testing)
+For any $r \le 2^c - 1$ and $z \in \{0, 1\}$:
+$$r \mathbin{\&} ((2^c - 1)(1 - z)) = r \iff (z = 1 \implies r = 0)$$
 
-4. **Single-Digit Branch Deduction (`single_slot_branch_correct`)**:
-   Under the single-digit zero test and the transition equation $r' + v = r$ with state decomposition $s = v + z$, the values of $v$ and $z$ are uniquely forced to the correct branch.
-
-5. **Structural Operation Formulas (`stage1_power_savings`, `glazer_baseline_power_calls`, `glazer_stage1_power_calls`)**:
-   Exact arithmetic formulas for the baseline power count ($15,845$) and the single-test formula ($8,489$).
-
-## How to Verify
+## Verification
 
 ```bash
 lake build DiophantineZQ Challenge
