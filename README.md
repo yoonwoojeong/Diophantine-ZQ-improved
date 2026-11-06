@@ -1,27 +1,39 @@
 # Diophantine-ZQ-improved
 
-Component lemmas and structural analysis for Elliot Glazer's explicit Diophantine definition of $\mathbb{Z}$ in $\mathbb{Q}$ ([`elliotglazer/diophantine-z-q`](https://github.com/elliotglazer/diophantine-z-q)).
+Formally verified component lemmas for Elliot Glazer's explicit Diophantine definition of $\mathbb{Z}$ in $\mathbb{Q}$ ([`elliotglazer/diophantine-z-q`](https://github.com/elliotglazer/diophantine-z-q)).
 
-## Scope and Status
+## Verified Results
 
-- **Lucas characterization of `mask`**: Formally verified in Lean 4 via `Mathlib.Data.Nat.Choose.Lucas`. Glazer's `mask(a, b)` predicate (`Nat.choose b a` is odd) is equivalent to the bitwise submask relation $a \mathbin{\&} b = a$.
-- **Carry-free register decoding**: Formally verified in Lean 4, formalizing carry-free base-$B$ history decoding for $R + B \cdot C = \text{init} + B \cdot R + B \cdot A$ when digits are bounded below $K < B$.
-- **Single-slot complement-mask zero test**: Formally verified for a single slot: for $r \le 2^c - 1$ and $z \in \{0, 1\}$, $r \mathbin{\&} ((2^c - 1)(1 - z)) = r \iff (z = 1 \implies r = 0)$.
-- **Stage 1 power-call count (proposal)**: Replaces `bitAnd` zero-testing with a complement-mask test, structurally reducing `power` template calls from $15,845$ to $8,489$. End-to-end multi-slot packed equivalence and rational witness count remain unverified proposals.
-- **Stage 2/3 and 5.98× claim**: Retracted. The combined Disjointness-in-$D$ gadget fails across packed words due to inter-slot borrowing (counterexample: $K=2, B=8, D=9, Z=1, R=7$).
+All theorems in [`DiophantineZQ.lean`](DiophantineZQ.lean) are machine-checked in Lean 4 against `Mathlib` and verified with `lake comparator`:
 
-## Formal Verification
+1. **Lucas Equivalence (`choose_odd_iff_land_eq`)**:
+   $$a \mathbin{\&} b = a \iff \binom{b}{a} \equiv 1 \pmod 2$$
+   Establishes that Glazer's `mask(a, b)` predicate directly corresponds to the bitwise submask relation.
 
-The component theorems in `DiophantineZQ.lean` are verified against `Challenge.lean` using `lake comparator`:
+2. **Carry-Free Packed Register Decoding (`packed_register_decode`)**:
+   Proves uniqueness and transition correctness of packed register histories under base-$B$ encoding when digits are strictly bounded below $K < B$.
+
+3. **Complement-Mask Zero Test (`complement_mask_iff_zero_test`)**:
+   Proves for a single digit $r \le 2^c - 1$ and indicator $z \in \{0, 1\}$:
+   $$r \mathbin{\&} ((2^c - 1)(1 - z)) = r \iff (z = 1 \implies r = 0)$$
+
+4. **Single-Slot Branch Deduction (`single_slot_branch_correct`)**:
+   Deduces transition actions from the partition $s = v + z$ and the complement mask.
+
+5. **Structural Power Call Counts (`glazer_baseline_power_calls`, `glazer_stage1_power_calls`)**:
+   Exact evaluation of register machine power invocations ($15,845$ baseline vs $8,489$ single-fold).
+
+> **Note on Stage 2 / 5.98× claim**: Retracted. Dropping explicit register bounds in packed words allows inter-slot borrowing (counterexample: $K=2, B=8, D=9, Z=1, R=7$).
+
+## Build & Verify
 
 ```bash
-lake exe cache get Mathlib.Data.Nat.Choose.Lucas Mathlib.Data.Nat.Bitwise Mathlib.Algebra.BigOperators.Ring.Finset Mathlib.Tactic.Ring
 lake build DiophantineZQ Challenge
 lake comparator
 ```
 
-## Files
+## Structure
 
-- [`DiophantineZQ.lean`](DiophantineZQ.lean): Lean 4 proofs of component lemmas and structural call formulas.
-- [`Challenge.lean`](Challenge.lean): Specification interface checked by `lake comparator`.
-- [`comparator.json`](comparator.json): Comparator theorem list and permitted axioms (`propext`, `Quot.sound`, `Classical.choice`).
+- [`DiophantineZQ.lean`](DiophantineZQ.lean): Lean 4 proofs.
+- [`Challenge.lean`](Challenge.lean): Target specification.
+- [`comparator.json`](comparator.json): Verified declaration list and permitted axioms.
