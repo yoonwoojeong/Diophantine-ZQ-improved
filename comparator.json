@@ -9,7 +9,16 @@
     "DiophantineZQ.single_slot_branch_correct",
     "DiophantineZQ.stage1_power_savings",
     "DiophantineZQ.glazer_baseline_power_calls",
-    "DiophantineZQ.glazer_stage1_power_calls"
+    "DiophantineZQ.glazer_stage1_power_calls",
+    "DiophantineZQ.glazer_totalQ",
+    "DiophantineZQ.stage1_delta_from_gadgets",
+    "DiophantineZQ.stage1Circuit_powers",
+    "DiophantineZQ.stage1_totalQ_add_savings",
+    "DiophantineZQ.stage1_totalQ_lt",
+    "DiophantineZQ.glazer_stage1_circuit",
+    "DiophantineZQ.glazer_stage1_totalQ",
+    "DiophantineZQ.glazer_stage1_totalQ_lt",
+    "DiophantineZQ.glazer_stage1_Q_savings"
   ],
   "permitted_axioms": [
     "propext",
