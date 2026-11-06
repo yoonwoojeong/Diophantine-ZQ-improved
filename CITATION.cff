@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Diophantine-ZQ-improved: Lean 4 lemmas and a Q-witness count for a Stage 1 variant of Glazer's definition of Z in Q"
+abstract: >-
+  Machine-checked component lemmas (Lucas's theorem for mask, carry-free register
+  decoding, single-slot zero test) and an exact count showing that a Stage 1
+  variant of the natural circuit behind Elliot Glazer's definition of Z in Q has
+  157,023,255,238 rational witnesses instead of 292,890,231,904. Multi-slot
+  correctness of the Stage 1 variant is not proved.
+authors:
+  - name: "yoonwoojeong"
+license: Apache-2.0
+repository-code: "https://github.com/yoonwoojeong/Diophantine-ZQ-improved"
+version: 0.2.0
+date-released: 2026-11-06
+keywords:
+  - Hilbert's tenth problem
+  - Diophantine definition
+  - Lean 4
+  - Mathlib
+references:
+  - type: software
+    title: "Z is Diophantine in Q"
+    authors:
+      - family-names: Glazer
+        given-names: Elliot
+    repository-code: "https://github.com/elliotglazer/diophantine-z-q"
