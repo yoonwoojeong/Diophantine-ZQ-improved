@@ -1,13 +1,14 @@
 /-
   DiophantineZQ.Antihydra
   =======================
-  Formalization of the BB(6) Cryptid Antihydra (`1RB1RA_0LC1LE_1LD1LC_1LA0LB_1LF1RE_---0RA`),
-  following `google-deepmind/cryptids`, without assuming or attempting to establish its
-  unresolved halting status:
+  Mathlib-backed formalization of the BB(6) Cryptid Antihydra
+  (`1RB1RA_0LC1LE_1LD1LC_1LA0LB_1LF1RE_---0RA`), following `google-deepmind/cryptids`,
+  without assuming or attempting to establish its unresolved halting status:
   1. 6-state transition table `AntihydraTM` and 12-step initial transition from blank tape
      to `P(0, 3, 1)` (`antihydra_reaches_start_in_12_steps`).
   2. Accelerated 3-counter Collatz-like map `antihydraNext` on `AHState` (`P(a, b, c)`).
-  3. 1-witness single-step Diophantine representation (`antihydraStepPoly_iff_next`).
+  3. 1-witness single-fold Diophantine representation (`antihydraStepPoly_iff_next`,
+     `antihydraStepPoly_unique`) proving both witness existence and witness uniqueness.
   4. Complete trajectory Diophantine equivalence (`antihydra_halts_iff_diophantine`).
 -/
 
@@ -40,9 +41,9 @@ theorem antihydra_reaches_start_in_12_steps :
 /-! ## 2. Cryptids Accelerated 3-Counter Map `antihydraNext` on `P(a, b, c)` -/
 
 structure AHState where
-  a : Nat
-  b : Nat
-  c : Nat
+  a : ℕ
+  b : ℕ
+  c : ℕ
   deriving DecidableEq, Repr
 
 def ahStart : AHState := ⟨0, 3, 1⟩
@@ -62,23 +63,23 @@ theorem antihydra_accel_step_3 : antihydraNext ⟨2, 7, 1⟩ = some ⟨2, 5, 4�
 theorem antihydra_accel_step_4 : antihydraNext ⟨2, 5, 4⟩ = some ⟨2, 3, 7⟩ := rfl
 theorem antihydra_accel_step_5 : antihydraNext ⟨2, 3, 7⟩ = some ⟨2, 1, 10⟩ := rfl
 
-def runAntihydraAccel : Nat → AHState → Option AHState
+def runAntihydraAccel : ℕ → AHState → Option AHState
   | 0, s => some s
   | n + 1, s =>
       match antihydraNext s with
       | none => none
       | some s' => runAntihydraAccel n s'
 
-def AntihydraCollatzHaltsIn (n : Nat) : Prop :=
+def AntihydraCollatzHaltsIn (n : ℕ) : Prop :=
   ∃ s_f : AHState, runAntihydraAccel n ahStart = some s_f ∧ antihydraNext s_f = none
 
 def AntihydraCollatzHalts : Prop :=
-  ∃ n : Nat, AntihydraCollatzHaltsIn n
+  ∃ n : ℕ, AntihydraCollatzHaltsIn n
 
-/-! ## 3. Exact 1-Witness Diophantine Representation of `antihydraNext` over ℕ -/
+/-! ## 3. Exact 1-Witness Single-Fold Representation of `antihydraNext` over ℕ -/
 
-def antihydraHaltPoly (s : AHState) : Int :=
-  sumSquaresInt [(s.a : Int) - 0, (s.b : Int) - 2]
+def antihydraHaltPoly (s : AHState) : ℤ :=
+  sumSquaresInt [(s.a : ℤ) - 0, (s.b : ℤ) - 2]
 
 theorem antihydraHaltPoly_eq_zero_iff (s : AHState) :
     antihydraHaltPoly s = 0 ↔ antihydraNext s = none := by
@@ -103,146 +104,172 @@ theorem antihydraHaltPoly_eq_zero_iff (s : AHState) :
     · rcases a with _ | a' <;> contradiction
 
 /-- Encodes all 5 non-halting branches of `antihydraNext s = some s'` using a single
-    uniquely determined natural witness `d : Nat`. -/
-def antihydraStepPoly (s s' : AHState) (d : Nat) : Int :=
+    uniquely determined natural witness `d : ℕ`. -/
+def antihydraStepPoly (s s' : AHState) (d : ℕ) : ℤ :=
   let br1 := sumSquaresInt [
-    (s.a : Int) - 0, (s.b : Int) - 0, (d : Int) - 0,
-    (s'.a : Int) - 0, (s'.b : Int) - ((s.c : Int) + 3), (s'.c : Int) - 1
+    (s.a : ℤ) - 0, (s.b : ℤ) - 0, (d : ℤ) - 0,
+    (s'.a : ℤ) - 0, (s'.b : ℤ) - ((s.c : ℤ) + 3), (s'.c : ℤ) - 1
   ]
   let br2 := sumSquaresInt [
-    (s.a : Int) - ((d : Int) + 1), (s.b : Int) - 0,
-    (s'.a : Int) - 0, (s'.b : Int) - ((d : Int) + (s.c : Int) + 7), (s'.c : Int) - 1
+    (s.a : ℤ) - ((d : ℤ) + 1), (s.b : ℤ) - 0,
+    (s'.a : ℤ) - 0, (s'.b : ℤ) - ((d : ℤ) + (s.c : ℤ) + 7), (s'.c : ℤ) - 1
   ]
   let br3 := sumSquaresInt [
-    (s.b : Int) - 1, (d : Int) - 0,
-    (s'.a : Int) - ((s.a : Int) + 2), (s'.b : Int) - ((s.c : Int) + 3), (s'.c : Int) - 1
+    (s.b : ℤ) - 1, (d : ℤ) - 0,
+    (s'.a : ℤ) - ((s.a : ℤ) + 2), (s'.b : ℤ) - ((s.c : ℤ) + 3), (s'.c : ℤ) - 1
   ]
   let br4 := sumSquaresInt [
-    (s.a : Int) - ((d : Int) + 1), (s.b : Int) - 2,
-    (s'.a : Int) - (d : Int), (s'.b : Int) - ((s.c : Int) + 4), (s'.c : Int) - 1
+    (s.a : ℤ) - ((d : ℤ) + 1), (s.b : ℤ) - 2,
+    (s'.a : ℤ) - (d : ℤ), (s'.b : ℤ) - ((s.c : ℤ) + 4), (s'.c : ℤ) - 1
   ]
   let br5 := sumSquaresInt [
-    (s.b : Int) - ((d : Int) + 3),
-    (s'.a : Int) - (s.a : Int), (s'.b : Int) - ((d : Int) + 1), (s'.c : Int) - ((s.c : Int) + 3)
+    (s.b : ℤ) - ((d : ℤ) + 3),
+    (s'.a : ℤ) - (s.a : ℤ), (s'.b : ℤ) - ((d : ℤ) + 1), (s'.c : ℤ) - ((s.c : ℤ) + 3)
   ]
   br1 * br2 * br3 * br4 * br5
 
-theorem antihydraStepPoly_iff_next (s s' : AHState) :
-    (∃ d : Nat, antihydraStepPoly s s' d = 0) ↔
-    antihydraNext s = some s' := by
-  unfold antihydraStepPoly
+private theorem antihydraStepPoly_zero_decode (s s' : AHState) (d : ℕ)
+    (h : antihydraStepPoly s s' d = 0) :
+    antihydraNext s = some s' ∧
+    d = (if s.b = 0 then s.a - 1 else if s.b = 1 then 0 else if s.b = 2 then s.a - 1 else s.b - 3) := by
+  unfold antihydraStepPoly at h
   cases s with | mk a b c =>
   cases s' with | mk a' b' c' =>
-  dsimp
-  constructor
-  · rintro ⟨d, hprod⟩
-    rcases Int.mul_eq_zero.mp hprod with h1234 | h5
-    · rcases Int.mul_eq_zero.mp h1234 with h123 | h4
-      · rcases Int.mul_eq_zero.mp h123 with h12 | h3
-        · rcases Int.mul_eq_zero.mp h12 with h1 | h2
-          · rw [sumSquaresInt_eq_zero_iff] at h1
-            simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h1
-            rcases h1 with ⟨ha, hb, _, ha', hb', hc'⟩
-            have : a = 0 := by omega
-            have : b = 0 := by omega
-            have : a' = 0 := by omega
-            have : b' = c + 3 := by omega
-            have : c' = 1 := by omega
-            subst_vars; rfl
-          · rw [sumSquaresInt_eq_zero_iff] at h2
-            simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h2
-            rcases h2 with ⟨ha, hb, ha', hb', hc'⟩
-            have : a = d + 1 := by omega
-            have : b = 0 := by omega
-            have : a' = 0 := by omega
-            have : b' = d + c + 7 := by omega
-            have : c' = 1 := by omega
-            subst_vars; rfl
-        · rw [sumSquaresInt_eq_zero_iff] at h3
-          simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h3
-          rcases h3 with ⟨hb, _, ha', hb', hc'⟩
-          have : b = 1 := by omega
-          have : a' = a + 2 := by omega
+  dsimp at h ⊢
+  rcases mul_eq_zero.mp h with h1234 | h5
+  · rcases mul_eq_zero.mp h1234 with h123 | h4
+    · rcases mul_eq_zero.mp h123 with h12 | h3
+      · rcases mul_eq_zero.mp h12 with h1 | h2
+        · rw [sumSquaresInt_eq_zero_iff] at h1
+          simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h1
+          rcases h1 with ⟨ha, hb, hd, ha', hb', hc'⟩
+          have : a = 0 := by omega
+          have : b = 0 := by omega
+          have : d = 0 := by omega
+          have : a' = 0 := by omega
           have : b' = c + 3 := by omega
           have : c' = 1 := by omega
-          subst_vars; rcases a with _ | _ <;> rfl
-      · rw [sumSquaresInt_eq_zero_iff] at h4
-        simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h4
-        rcases h4 with ⟨ha, hb, ha', hb', hc'⟩
-        have : a = d + 1 := by omega
-        have : b = 2 := by omega
-        have : a' = d := by omega
-        have : b' = c + 4 := by omega
+          subst_vars; exact ⟨rfl, rfl⟩
+        · rw [sumSquaresInt_eq_zero_iff] at h2
+          simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h2
+          rcases h2 with ⟨ha, hb, ha', hb', hc'⟩
+          have : a = d + 1 := by omega
+          have : b = 0 := by omega
+          have : a' = 0 := by omega
+          have : b' = d + c + 7 := by omega
+          have : c' = 1 := by omega
+          subst_vars; exact ⟨rfl, by simp⟩
+      · rw [sumSquaresInt_eq_zero_iff] at h3
+        simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h3
+        rcases h3 with ⟨hb, hd, ha', hb', hc'⟩
+        have : b = 1 := by omega
+        have : d = 0 := by omega
+        have : a' = a + 2 := by omega
+        have : b' = c + 3 := by omega
         have : c' = 1 := by omega
-        subst_vars; rfl
-    · rw [sumSquaresInt_eq_zero_iff] at h5
-      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h5
-      rcases h5 with ⟨hb, ha', hb', hc'⟩
-      have : b = d + 3 := by omega
-      have : a' = a := by omega
-      have : b' = d + 1 := by omega
-      have : c' = c + 3 := by omega
-      subst_vars; rcases a' with _ | _ <;> rfl
+        subst_vars
+        refine ⟨by rcases a with _ | _ <;> rfl, rfl⟩
+    · rw [sumSquaresInt_eq_zero_iff] at h4
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h4
+      rcases h4 with ⟨ha, hb, ha', hb', hc'⟩
+      have : a = d + 1 := by omega
+      have : b = 2 := by omega
+      have : a' = d := by omega
+      have : b' = c + 4 := by omega
+      have : c' = 1 := by omega
+      subst_vars; exact ⟨rfl, by simp⟩
+  · rw [sumSquaresInt_eq_zero_iff] at h5
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h5
+    rcases h5 with ⟨hb, ha', hb', hc'⟩
+    have : b = d + 3 := by omega
+    have : a' = a := by omega
+    have : b' = d + 1 := by omega
+    have : c' = c + 3 := by omega
+    subst_vars
+    have h1 : ¬ (d + 3 = 1) := by omega
+    have h2 : ¬ (d + 3 = 2) := by omega
+    refine ⟨by rcases a' with _ | _ <;> rfl, by simp [h1, h2]⟩
+
+theorem antihydraStepPoly_iff_next (s s' : AHState) :
+    (∃ d : ℕ, antihydraStepPoly s s' d = 0) ↔
+    antihydraNext s = some s' := by
+  constructor
+  · rintro ⟨d, h⟩
+    exact (antihydraStepPoly_zero_decode s s' d h).1
   · intro hnext
+    unfold antihydraStepPoly
+    cases s with | mk a b c =>
+    cases s' with | mk a' b' c' =>
+    dsimp
     unfold antihydraNext at hnext; dsimp at hnext
     rcases b with _ | _ | _ | b'
     · rcases a with _ | a'
       · simp at hnext; rcases hnext with ⟨rfl, rfl, rfl⟩
         refine ⟨0, ?_⟩
         have hbr1 : sumSquaresInt [
-            ((0 : Nat) : Int) - 0, ((0 : Nat) : Int) - 0, ((0 : Nat) : Int) - 0,
-            ((0 : Nat) : Int) - 0, ((c + 3 : Nat) : Int) - ((c : Int) + 3), ((1 : Nat) : Int) - 1
+            ((0 : ℕ) : ℤ) - 0, ((0 : ℕ) : ℤ) - 0, ((0 : ℕ) : ℤ) - 0,
+            ((0 : ℕ) : ℤ) - 0, ((c + 3 : ℕ) : ℤ) - ((c : ℤ) + 3), ((1 : ℕ) : ℤ) - 1
           ] = 0 := by
           rw [sumSquaresInt_eq_zero_iff]
           simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-          refine ⟨rfl, rfl, rfl, rfl, by omega, rfl⟩
+          refine ⟨rfl, rfl, rfl, rfl, by push_cast; ring, rfl⟩
         rw [hbr1]; simp
       · simp at hnext; rcases hnext with ⟨rfl, rfl, rfl⟩
         refine ⟨a', ?_⟩
         have hbr2 : sumSquaresInt [
-            ((a' + 1 : Nat) : Int) - ((a' : Int) + 1), ((0 : Nat) : Int) - 0, ((0 : Nat) : Int) - 0,
-            ((a' + c + 7 : Nat) : Int) - ((a' : Int) + (c : Int) + 7), ((1 : Nat) : Int) - 1
+            ((a' + 1 : ℕ) : ℤ) - ((a' : ℤ) + 1), ((0 : ℕ) : ℤ) - 0, ((0 : ℕ) : ℤ) - 0,
+            ((a' + c + 7 : ℕ) : ℤ) - ((a' : ℤ) + (c : ℤ) + 7), ((1 : ℕ) : ℤ) - 1
           ] = 0 := by
           rw [sumSquaresInt_eq_zero_iff]
           simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-          refine ⟨by omega, rfl, rfl, by omega, rfl⟩
+          refine ⟨by push_cast; ring, rfl, rfl, by push_cast; ring, rfl⟩
         rw [hbr2]; simp
     · simp at hnext; rcases hnext with ⟨rfl, rfl, rfl⟩
       refine ⟨0, ?_⟩
       have hbr3 : sumSquaresInt [
-          ((1 : Nat) : Int) - 1, ((0 : Nat) : Int) - 0, ((a + 2 : Nat) : Int) - ((a : Int) + 2),
-          ((c + 3 : Nat) : Int) - ((c : Int) + 3), ((1 : Nat) : Int) - 1
+          ((1 : ℕ) : ℤ) - 1, ((0 : ℕ) : ℤ) - 0, ((a + 2 : ℕ) : ℤ) - ((a : ℤ) + 2),
+          ((c + 3 : ℕ) : ℤ) - ((c : ℤ) + 3), ((1 : ℕ) : ℤ) - 1
         ] = 0 := by
         rw [sumSquaresInt_eq_zero_iff]
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-        refine ⟨rfl, rfl, by omega, by omega, rfl⟩
+        refine ⟨rfl, rfl, by push_cast; ring, by push_cast; ring, rfl⟩
       rw [hbr3]; simp
     · rcases a with _ | a'
       · contradiction
       · simp at hnext; rcases hnext with ⟨rfl, rfl, rfl⟩
         refine ⟨a', ?_⟩
         have hbr4 : sumSquaresInt [
-            ((a' + 1 : Nat) : Int) - ((a' : Int) + 1), ((2 : Nat) : Int) - 2, (a' : Int) - (a' : Int),
-            ((c + 4 : Nat) : Int) - ((c : Int) + 4), ((1 : Nat) : Int) - 1
+            ((a' + 1 : ℕ) : ℤ) - ((a' : ℤ) + 1), ((2 : ℕ) : ℤ) - 2, (a' : ℤ) - (a' : ℤ),
+            ((c + 4 : ℕ) : ℤ) - ((c : ℤ) + 4), ((1 : ℕ) : ℤ) - 1
           ] = 0 := by
           rw [sumSquaresInt_eq_zero_iff]
           simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-          refine ⟨by omega, rfl, by omega, by omega, rfl⟩
+          refine ⟨by push_cast; ring, rfl, by ring, by push_cast; ring, rfl⟩
         rw [hbr4]; simp
     · simp at hnext; rcases hnext with ⟨rfl, rfl, rfl⟩
       refine ⟨b', ?_⟩
       have hbr5 : sumSquaresInt [
-          ((b' + 3 : Nat) : Int) - ((b' : Int) + 3), (a : Int) - (a : Int),
-          ((b' + 1 : Nat) : Int) - ((b' : Int) + 1), ((c + 3 : Nat) : Int) - ((c : Int) + 3)
+          ((b' + 3 : ℕ) : ℤ) - ((b' : ℤ) + 3), (a : ℤ) - (a : ℤ),
+          ((b' + 1 : ℕ) : ℤ) - ((b' : ℤ) + 1), ((c + 3 : ℕ) : ℤ) - ((c : ℤ) + 3)
         ] = 0 := by
         rw [sumSquaresInt_eq_zero_iff]
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-        refine ⟨by omega, by omega, by omega, by omega⟩
+        refine ⟨by push_cast; ring, by ring, by push_cast; ring, by push_cast; ring⟩
       rw [hbr5]; simp
+
+/-- Single-fold witness uniqueness for `antihydraStepPoly`: for any `(s, s')`, at most one
+    natural witness `d : ℕ` satisfies `antihydraStepPoly s s' d = 0`. -/
+theorem antihydraStepPoly_unique (s s' : AHState) (d₁ d₂ : ℕ)
+    (h₁ : antihydraStepPoly s s' d₁ = 0)
+    (h₂ : antihydraStepPoly s s' d₂ = 0) :
+    d₁ = d₂ := by
+  have hd₁ := (antihydraStepPoly_zero_decode s s' d₁ h₁).2
+  have hd₂ := (antihydraStepPoly_zero_decode s s' d₂ h₂).2
+  rw [hd₁, hd₂]
 
 /-! ## 4. Full Trajectory Diophantine Equivalence for Antihydra -/
 
-def antihydraStepsResidual : Nat → (Nat → AHState) → (Nat → Nat) → Int
+def antihydraStepsResidual : ℕ → (ℕ → AHState) → (ℕ → ℕ) → ℤ
   | 0, _, _ => 0
   | n + 1, traj, d_seq =>
       sumSquaresInt [
@@ -250,15 +277,15 @@ def antihydraStepsResidual : Nat → (Nat → AHState) → (Nat → Nat) → Int
         antihydraStepsResidual n (fun t => traj (t + 1)) (fun t => d_seq (t + 1))
       ]
 
-def antihydraTrajectoryPoly (n : Nat) (traj : Nat → AHState) (d_seq : Nat → Nat) : Int :=
+def antihydraTrajectoryPoly (n : ℕ) (traj : ℕ → AHState) (d_seq : ℕ → ℕ) : ℤ :=
   sumSquaresInt [
-    ((traj 0).a : Int) - 0, ((traj 0).b : Int) - 3, ((traj 0).c : Int) - 1,
+    ((traj 0).a : ℤ) - 0, ((traj 0).b : ℤ) - 3, ((traj 0).c : ℤ) - 1,
     antihydraStepsResidual n traj d_seq,
     antihydraHaltPoly (traj n)
   ]
 
-theorem antihydraStepsResidual_iff (n : Nat) (traj : Nat → AHState) :
-    (∃ d_seq : Nat → Nat, antihydraStepsResidual n traj d_seq = 0) ↔
+theorem antihydraStepsResidual_iff (n : ℕ) (traj : ℕ → AHState) :
+    (∃ d_seq : ℕ → ℕ, antihydraStepsResidual n traj d_seq = 0) ↔
       (∀ t, t < n → antihydraNext (traj t) = some (traj (t + 1))) := by
   induction n generalizing traj with
   | zero => simp [antihydraStepsResidual]
@@ -283,9 +310,9 @@ theorem antihydraStepsResidual_iff (n : Nat) (traj : Nat → AHState) :
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
       exact ⟨hd0, htail⟩
 
-theorem runAntihydraAccel_iff_trajectory (n : Nat) (s₀ s_f : AHState) :
+theorem runAntihydraAccel_iff_trajectory (n : ℕ) (s₀ s_f : AHState) :
     runAntihydraAccel n s₀ = some s_f ↔
-      ∃ traj : Nat → AHState,
+      ∃ traj : ℕ → AHState,
         traj 0 = s₀ ∧ traj n = s_f ∧
         (∀ t, t < n → antihydraNext (traj t) = some (traj (t + 1))) := by
   induction n generalizing s₀ with
@@ -316,7 +343,7 @@ theorem runAntihydraAccel_iff_trajectory (n : Nat) (s₀ s_f : AHState) :
     or resolving Antihydra's open halting problem. -/
 theorem antihydra_halts_iff_diophantine :
     AntihydraCollatzHalts ↔
-      ∃ (n : Nat) (traj : Nat → AHState) (d_seq : Nat → Nat),
+      ∃ (n : ℕ) (traj : ℕ → AHState) (d_seq : ℕ → ℕ),
         antihydraTrajectoryPoly n traj d_seq = 0 := by
   unfold AntihydraCollatzHalts AntihydraCollatzHaltsIn antihydraTrajectoryPoly
   constructor

@@ -1,12 +1,13 @@
 /-
   DiophantineZQ.SmallTM
   =====================
-  Formalization of binary Turing machines via base-2 half-tape stacks `L, R ∈ ℕ`:
+  Mathlib-backed formalization of binary Turing machines via base-2 half-tape stacks `L, R ∈ ℕ`:
   1. Operational semantics (`Machine`, `TMConfig`, `stepTM`, `runTM`, `HaltsIn`, `Halts`).
-  2. Concrete 2-state Busy Beaver champion `BB2` (`1RB1LB_1LA1RH`), its exact single-step
-     Diophantine polynomial (`bb2StepPoly_iff_stepTM`), and 6-step halting proof (`bb2_halts`).
-  3. Complete single-fold Diophantine representation (`singleFoldClear_iff`) of the
-     parametric `clear` register machine (`29` `power` calls / `2,343` vars → `1` `power` call / `85` vars).
+  2. Concrete 2-state Busy Beaver champion `BB2` (`1RB1LB_1LA1RH`), its exact single-fold
+     step polynomial (`bb2StepPoly_iff_stepTM`, `bb2StepPoly_unique`), and 6-step halting proof (`bb2_halts`).
+  3. Complete single-fold Diophantine representation (`singleFoldClear_iff`, `singleFoldClear_unique`)
+     of the parametric `clear` register machine (`29` `power` calls / `2,343` vars → `1` `power` call / `85` vars),
+     proving both witness existence and single-fold witness uniqueness.
 -/
 
 import DiophantineZQ.SingleFold
@@ -20,28 +21,28 @@ inductive Dir where
   | R : Dir
   deriving DecidableEq, Repr
 
-inductive Action (numStates : Nat) where
+inductive Action (numStates : ℕ) where
   | halt : Action numStates
-  | step (writeBit : Nat) (dir : Dir) (nextState : Fin numStates) : Action numStates
+  | step (writeBit : ℕ) (dir : Dir) (nextState : Fin numStates) : Action numStates
   deriving DecidableEq, Repr
 
-def Machine (numStates : Nat) := Fin numStates → Bool → Action numStates
+def Machine (numStates : ℕ) := Fin numStates → Bool → Action numStates
 
 /-- Arithmetic configuration of an `n`-state binary Turing machine over `ℕ`:
     `q < n` is an active state, `q = n` is the halting state, `L` encodes the tape left of the head,
     and `R` encodes the head symbol (`R % 2`) plus the tape right of the head (`R / 2`). -/
 structure TMConfig where
-  q : Nat
-  L : Nat
-  R : Nat
+  q : ℕ
+  L : ℕ
+  R : ℕ
   deriving DecidableEq, Repr
 
 def initConfig : TMConfig := ⟨0, 0, 0⟩
 
-def stepTM {n : Nat} (M : Machine n) (c : TMConfig) : Option TMConfig :=
+def stepTM {n : ℕ} (M : Machine n) (c : TMConfig) : Option TMConfig :=
   if hq : c.q < n then
     let s : Bool := (c.R % 2 == 1)
-    let r_half : Nat := c.R / 2
+    let r_half : ℕ := c.R / 2
     match M ⟨c.q, hq⟩ s with
     | .halt => some ⟨n, c.L, c.R⟩
     | .step w .R q' => some ⟨q'.val, 2 * c.L + w, r_half⟩
@@ -49,28 +50,28 @@ def stepTM {n : Nat} (M : Machine n) (c : TMConfig) : Option TMConfig :=
   else
     none
 
-def runTM {n : Nat} (M : Machine n) : Nat → TMConfig → Option TMConfig
+def runTM {n : ℕ} (M : Machine n) : ℕ → TMConfig → Option TMConfig
   | 0, c => some c
   | k + 1, c =>
       match stepTM M c with
       | none => none
       | some c' => runTM M k c'
 
-def HaltsIn {n : Nat} (M : Machine n) (c₀ : TMConfig) (k : Nat) : Prop :=
-  ∃ L_f R_f : Nat, runTM M k c₀ = some ⟨n, L_f, R_f⟩
+def HaltsIn {n : ℕ} (M : Machine n) (c₀ : TMConfig) (k : ℕ) : Prop :=
+  ∃ L_f R_f : ℕ, runTM M k c₀ = some ⟨n, L_f, R_f⟩
 
-def Halts {n : Nat} (M : Machine n) : Prop :=
-  ∃ k : Nat, HaltsIn M initConfig k
+def Halts {n : ℕ} (M : Machine n) : Prop :=
+  ∃ k : ℕ, HaltsIn M initConfig k
 
-/-! ## 2. Exact Diophantine Step Primitives -/
+/-! ## 2. Exact Single-Fold Step Primitives -/
 
-def isBitPoly (b : Nat) : Int :=
-  (b : Int) * ((b : Int) - 1)
+def isBitPoly (b : ℕ) : ℤ :=
+  (b : ℤ) * ((b : ℤ) - 1)
 
-theorem isBitPoly_eq_zero_iff (b : Nat) :
+theorem isBitPoly_eq_zero_iff (b : ℕ) :
     isBitPoly b = 0 ↔ (b = 0 ∨ b = 1) := by
   unfold isBitPoly
-  rw [Int.mul_eq_zero]
+  rw [mul_eq_zero]
   constructor
   · rintro (h0 | h1)
     · left; omega
@@ -79,13 +80,13 @@ theorem isBitPoly_eq_zero_iff (b : Nat) :
     · left; rfl
     · right; rfl
 
-def bitSplitResidual (X x_half bit : Nat) : Int :=
+def bitSplitResidual (X x_half bit : ℕ) : ℤ :=
   sumSquaresInt [
     isBitPoly bit,
-    (X : Int) - (2 * (x_half : Int) + (bit : Int))
+    (X : ℤ) - (2 * (x_half : ℤ) + (bit : ℤ))
   ]
 
-theorem bitSplitResidual_eq_zero_iff (X x_half bit : Nat) :
+theorem bitSplitResidual_eq_zero_iff (X x_half bit : ℕ) :
     bitSplitResidual X x_half bit = 0 ↔
       ((bit = 0 ∨ bit = 1) ∧ X = 2 * x_half + bit) := by
   unfold bitSplitResidual
@@ -95,7 +96,7 @@ theorem bitSplitResidual_eq_zero_iff (X x_half bit : Nat) :
   exact ⟨by rintro ⟨hb, hX⟩; exact ⟨hb, by omega⟩,
          by rintro ⟨hb, hX⟩; exact ⟨hb, by omega⟩⟩
 
-theorem bitSplit_unique (X x_half bit : Nat) :
+theorem bitSplit_unique (X x_half bit : ℕ) :
     ((bit = 0 ∨ bit = 1) ∧ X = 2 * x_half + bit) ↔
       (bit = X % 2 ∧ x_half = X / 2) :=
   ⟨by rintro ⟨rfl | rfl, rfl⟩ <;> omega,
@@ -110,31 +111,31 @@ def BB2 : Machine 2 := fun q s =>
   | _, false => .step 1 .L ⟨0, by decide⟩
   | _, true  => .halt
 
-def bb2StepPoly (c c' : TMConfig) (r_half r_bit l_half l_bit : Nat) : Int :=
+def bb2StepPoly (c c' : TMConfig) (r_half r_bit l_half l_bit : ℕ) : ℤ :=
   let splitR := bitSplitResidual c.R r_half r_bit
   let splitL := bitSplitResidual c.L l_half l_bit
   let b00 := sumSquaresInt [
-    (c.q : Int) - 0, (r_bit : Int) - 0,
-    (c'.q : Int) - 1, (c'.L : Int) - (2 * (c.L : Int) + 1), (c'.R : Int) - (r_half : Int)
+    (c.q : ℤ) - 0, (r_bit : ℤ) - 0,
+    (c'.q : ℤ) - 1, (c'.L : ℤ) - (2 * (c.L : ℤ) + 1), (c'.R : ℤ) - (r_half : ℤ)
   ]
   let b01 := sumSquaresInt [
-    (c.q : Int) - 0, (r_bit : Int) - 1,
-    (c'.q : Int) - 1, (c'.L : Int) - (l_half : Int),
-    (c'.R : Int) - (2 * (2 * (r_half : Int) + 1) + (l_bit : Int))
+    (c.q : ℤ) - 0, (r_bit : ℤ) - 1,
+    (c'.q : ℤ) - 1, (c'.L : ℤ) - (l_half : ℤ),
+    (c'.R : ℤ) - (2 * (2 * (r_half : ℤ) + 1) + (l_bit : ℤ))
   ]
   let b10 := sumSquaresInt [
-    (c.q : Int) - 1, (r_bit : Int) - 0,
-    (c'.q : Int) - 0, (c'.L : Int) - (l_half : Int),
-    (c'.R : Int) - (2 * (2 * (r_half : Int) + 1) + (l_bit : Int))
+    (c.q : ℤ) - 1, (r_bit : ℤ) - 0,
+    (c'.q : ℤ) - 0, (c'.L : ℤ) - (l_half : ℤ),
+    (c'.R : ℤ) - (2 * (2 * (r_half : ℤ) + 1) + (l_bit : ℤ))
   ]
   let b11 := sumSquaresInt [
-    (c.q : Int) - 1, (r_bit : Int) - 1,
-    (c'.q : Int) - 2, (c'.L : Int) - (c.L : Int), (c'.R : Int) - (c.R : Int)
+    (c.q : ℤ) - 1, (r_bit : ℤ) - 1,
+    (c'.q : ℤ) - 2, (c'.L : ℤ) - (c.L : ℤ), (c'.R : ℤ) - (c.R : ℤ)
   ]
   sumSquaresInt [splitR, splitL, b00 * b01 * b10 * b11]
 
 theorem bb2StepPoly_iff_stepTM (c c' : TMConfig) :
-    (∃ r_half r_bit l_half l_bit : Nat,
+    (∃ r_half r_bit l_half l_bit : ℕ,
       bb2StepPoly c c' r_half r_bit l_half l_bit = 0) ↔
     stepTM BB2 c = some c' := by
   unfold bb2StepPoly
@@ -148,9 +149,9 @@ theorem bb2StepPoly_iff_stepTM (c c' : TMConfig) :
     rcases hL with ⟨hlb, hlh⟩
     subst hrb hrh hlb hlh
     cases c' with | mk q' L' R' =>
-    rcases Int.mul_eq_zero.mp hbranches with h012 | h11
-    · rcases Int.mul_eq_zero.mp h012 with h01 | h10
-      · rcases Int.mul_eq_zero.mp h01 with h00 | h01
+    rcases mul_eq_zero.mp hbranches with h012 | h11
+    · rcases mul_eq_zero.mp h012 with h01 | h10
+      · rcases mul_eq_zero.mp h01 with h00 | h01
         · rw [sumSquaresInt_eq_zero_iff] at h00
           simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h00
           rcases h00 with ⟨hq, hrb0, hq', hL', hR'⟩
@@ -208,6 +209,25 @@ theorem bb2StepPoly_iff_stepTM (c c' : TMConfig) :
       · simp [BB2, hq1, hrb1] at hstep; subst hstep; simp [sumSquaresInt, hq1, hrb1]
     · rw [dite_eq_right hq] at hstep; contradiction
 
+/-- Single-fold witness uniqueness for `bb2StepPoly`: the 4-tuple `(r_half, r_bit, l_half, l_bit)`
+    is uniquely determined by `(c, c')`. -/
+theorem bb2StepPoly_unique (c c' : TMConfig)
+    (rh₁ rb₁ lh₁ lb₁ rh₂ rb₂ lh₂ lb₂ : ℕ)
+    (h₁ : bb2StepPoly c c' rh₁ rb₁ lh₁ lb₁ = 0)
+    (h₂ : bb2StepPoly c c' rh₂ rb₂ lh₂ lb₂ = 0) :
+    (rh₁, rb₁, lh₁, lb₁) = (rh₂, rb₂, lh₂, lb₂) := by
+  unfold bb2StepPoly at h₁ h₂
+  rw [sumSquaresInt_eq_zero_iff] at h₁ h₂
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h₁ h₂
+  rcases h₁ with ⟨hR₁, hL₁, _⟩
+  rcases h₂ with ⟨hR₂, hL₂, _⟩
+  rw [bitSplitResidual_eq_zero_iff, bitSplit_unique] at hR₁ hL₁ hR₂ hL₂
+  rcases hR₁ with ⟨rfl, rfl⟩
+  rcases hL₁ with ⟨rfl, rfl⟩
+  rcases hR₂ with ⟨hrb₂, hrh₂⟩
+  rcases hL₂ with ⟨hlb₂, hlh₂⟩
+  rw [hrb₂, hrh₂, hlb₂, hlh₂]
+
 theorem bb2_halts_in_6 : HaltsIn BB2 initConfig 6 :=
   ⟨1, 7, by decide⟩
 
@@ -216,18 +236,18 @@ theorem bb2_halts : Halts BB2 :=
 
 /-! ## 4. Single-Fold Diophantine Representation of the `clear` Machine -/
 
-def clearAcceptsIn (n q_steps : Nat) : Prop :=
+def clearAcceptsIn (n q_steps : ℕ) : Prop :=
   q_steps = n + 1
 
-def singleFoldClearPoly (n q_steps B T_prev F_prev R₀ : Nat) : Int :=
+def singleFoldClearPoly (n q_steps B T_prev F_prev R₀ : ℕ) : ℤ :=
   sumSquaresInt [
-    (B : Int) - (2 * (n : Int) + 4),
-    (q_steps : Int) - ((n : Int) + 1),
-    (B : Int) * (F_prev : Int) + 1 - ((T_prev : Int) + (F_prev : Int)),
-    (R₀ : Int) + (B : Int) * (F_prev : Int) - ((n : Int) + (B : Int) * (R₀ : Int))
+    (B : ℤ) - (2 * (n : ℤ) + 4),
+    (q_steps : ℤ) - ((n : ℤ) + 1),
+    (B : ℤ) * (F_prev : ℤ) + 1 - ((T_prev : ℤ) + (F_prev : ℤ)),
+    (R₀ : ℤ) + (B : ℤ) * (F_prev : ℤ) - ((n : ℤ) + (B : ℤ) * (R₀ : ℤ))
   ]
 
-theorem geom_series_identity (B n : Nat) (_hB : 1 ≤ B) :
+theorem geom_series_identity (B n : ℕ) (_hB : 1 ≤ B) :
     B * packHistory B (fun _ => 1) n + 1 = B ^ n + packHistory B (fun _ => 1) n := by
   induction n with
   | zero => simp [packHistory]
@@ -238,7 +258,7 @@ theorem geom_series_identity (B n : Nat) (_hB : 1 ≤ B) :
     rw [Nat.mul_add, Nat.mul_one, Nat.mul_add] at hmul
     omega
 
-theorem countdown_history_identity (B n : Nat) :
+theorem countdown_history_identity (B n : ℕ) :
     packHistory B (fun t => n - t) (n + 1) + B * packHistory B (fun _ => 1) n =
       n + B * packHistory B (fun t => n - t) (n + 1) := by
   induction n with
@@ -263,9 +283,9 @@ theorem countdown_history_identity (B n : Nat) :
 
 /-- Compresses Glazer's `clear` machine from 29 `power` calls (2,343 variables) to
     1 `power` call (`T_prev = B^n`, 85 variables). -/
-theorem singleFoldClear_iff (n q_steps : Nat) :
+theorem singleFoldClear_iff (n q_steps : ℕ) :
     clearAcceptsIn n q_steps ↔
-      ∃ B T_prev F_prev R₀ : Nat,
+      ∃ B T_prev F_prev R₀ : ℕ,
         T_prev = B ^ n ∧
         singleFoldClearPoly n q_steps B T_prev F_prev R₀ = 0 := by
   unfold clearAcceptsIn singleFoldClearPoly
@@ -281,11 +301,39 @@ theorem singleFoldClear_iff (n q_steps : Nat) :
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     have hgeom_int := congrArg Int.ofNat (geom_series_identity B n (by omega))
     have hcount_int := congrArg Int.ofNat (countdown_history_identity B n)
-    exact ⟨by omega, by omega, Int.sub_eq_zero.mpr hgeom_int, Int.sub_eq_zero.mpr hcount_int⟩
+    exact ⟨by omega, by omega, sub_eq_zero.mpr hgeom_int, sub_eq_zero.mpr hcount_int⟩
   · rintro ⟨B, T_prev, F_prev, R₀, _, hpoly⟩
     rw [sumSquaresInt_eq_zero_iff] at hpoly
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hpoly
     rcases hpoly with ⟨_, hq, _, _⟩
     omega
+
+/-- Single-fold witness uniqueness for the compressed `clear` system:
+    given `T_prev = B^n` and `singleFoldClearPoly n q_steps B T_prev F_prev R₀ = 0`,
+    every witness `(B, T_prev, F_prev, R₀)` is uniquely determined by `(n, q_steps)`. -/
+theorem singleFoldClear_unique (n q_steps : ℕ)
+    (B₁ T₁ F₁ R₁ B₂ T₂ F₂ R₂ : ℕ)
+    (hT₁ : T₁ = B₁ ^ n) (hP₁ : singleFoldClearPoly n q_steps B₁ T₁ F₁ R₁ = 0)
+    (hT₂ : T₂ = B₂ ^ n) (hP₂ : singleFoldClearPoly n q_steps B₂ T₂ F₂ R₂ = 0) :
+    (B₁, T₁, F₁, R₁) = (B₂, T₂, F₂, R₂) := by
+  unfold singleFoldClearPoly at hP₁ hP₂
+  rw [sumSquaresInt_eq_zero_iff] at hP₁ hP₂
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hP₁ hP₂
+  rcases hP₁ with ⟨hB₁, _, hF₁, hR₁⟩
+  rcases hP₂ with ⟨hB₂, _, hF₂, hR₂⟩
+  have hB : B₁ = B₂ := by omega
+  subst hB
+  have hT : T₁ = T₂ := by rw [hT₁, hT₂]
+  subst hT
+  have hB_ge : (B₁ : ℤ) ≥ 4 := by omega
+  have hF_lin : ((B₁ : ℤ) - 1) * ((F₁ : ℤ) - (F₂ : ℤ)) = 0 := by linarith
+  have hF : F₁ = F₂ := by
+    rcases mul_eq_zero.mp hF_lin with hB1 | hFeq <;> omega
+  subst hF
+  have hR_lin : ((B₁ : ℤ) - 1) * ((R₁ : ℤ) - (R₂ : ℤ)) = 0 := by linarith
+  have hR : R₁ = R₂ := by
+    rcases mul_eq_zero.mp hR_lin with hB1 | hReq <;> omega
+  subst hR
+  rfl
 
 end DiophantineZQ

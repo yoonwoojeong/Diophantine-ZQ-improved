@@ -1,0 +1,36 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "DiophantineZQ",
+  "theorem_names": [
+    "DiophantineZQ.functional_witness_elimination_int",
+    "DiophantineZQ.functional_sub_elimination_nat",
+    "DiophantineZQ.dyadic_exponent_unique",
+    "DiophantineZQ.dyadic_exponent_exists",
+    "DiophantineZQ.packHistory_eq_iff",
+    "DiophantineZQ.complement_mask_slot_zero_test",
+    "DiophantineZQ.bb2_halts_in_6",
+    "DiophantineZQ.bb2_halts",
+    "DiophantineZQ.antihydra_reaches_start_in_12_steps",
+    "DiophantineZQ.power_positive_base_iff",
+    "DiophantineZQ.shared_mask_power_savings",
+    "DiophantineZQ.stage1_power_savings_symbolic",
+    "DiophantineZQ.stage2_lt_stage1_power_symbolic",
+    "DiophantineZQ.glazer_baseline_powers_param_eq",
+    "DiophantineZQ.glazer_stage1_powers_param_eq",
+    "DiophantineZQ.glazer_stage2_powers_param_eq",
+    "DiophantineZQ.glazer_total_rat_witnesses_eq",
+    "DiophantineZQ.glazer_total_nat_vars_eq",
+    "DiophantineZQ.stage1_nat_vars_eq",
+    "DiophantineZQ.stage1_rat_witnesses_eq",
+    "DiophantineZQ.stage2_power_calls_eq",
+    "DiophantineZQ.stage2_nat_vars_eq",
+    "DiophantineZQ.stage2_rat_witnesses_eq",
+    "DiophantineZQ.stage3_nat_vars_eq",
+    "DiophantineZQ.stage3_rat_witnesses_eq",
+    "DiophantineZQ.stage3_rat_savings_eq"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound"
+  ]
+}

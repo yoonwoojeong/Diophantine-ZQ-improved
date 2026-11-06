@@ -1,0 +1,50 @@
+name: Lean 4 & Comparator CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Build Mathlib Proofs & Verify with Comparator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install elan and Lean toolchain
+        run: |
+          curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Fetch targeted Mathlib .olean cache
+        run: |
+          lake exe cache get \
+            Mathlib.Data.Nat.Choose.Lucas \
+            Mathlib.Data.Nat.Bitwise \
+            Mathlib.Algebra.BigOperators.Ring.Finset \
+            Mathlib.Tactic.Ring \
+            Mathlib.Algebra.Field.Rat \
+            Mathlib.Algebra.MvPolynomial.Basic \
+            Mathlib.Algebra.MvPolynomial.Rename \
+            Mathlib.Algebra.Order.Ring.Rat \
+            Mathlib.Data.Fin.Tuple.Basic \
+            Mathlib.Data.Rat.Cast.Order \
+            Mathlib.Tactic.NormNum \
+            Mathlib.Tactic.Linarith
+
+      - name: Build DiophantineZQ and Challenge
+        run: |
+          lake build DiophantineZQ Challenge
+
+      - name: Verify all 58 theorems with lake comparator
+        run: |
+          lake comparator --inadvisably-no-sandbox --config=comparator/all.json
+          lake comparator --inadvisably-no-sandbox --config=comparator/constructive.json
+
+      - name: Run Python witness-accounting verifier
+        run: |
+          python3 scripts/audit_and_verify.py

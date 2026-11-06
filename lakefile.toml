@@ -1,6 +1,19 @@
-name = "diophantine_zq_prototype"
+name = "DiophantineZQ"
 version = "0.1.0"
-defaultTargets = ["DiophantineZQ"]
+defaultTargets = ["DiophantineZQ", "Challenge"]
+
+[leanOptions]
+pp.unicode.fun = true
+relaxedAutoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.35.0"
 
 [[lean_lib]]
 name = "DiophantineZQ"
+
+[[lean_lib]]
+name = "Challenge"

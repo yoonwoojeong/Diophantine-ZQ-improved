@@ -99,15 +99,16 @@ Because the linear combinations $Z^{(j)} = \sum_{i \text{ tests } j} W_i$ and $(
 
 ## 4. Established Results vs. Failed Approaches & Open Directions
 
-### 4.1 Established Results (Kernel-Verified in Lean 4)
-1. **Domain Separation & Functional Elimination (`DiophantineZQ/Domains.lean`):**
-   - `int_vs_rat_witness_separation`, `functional_witness_elimination_int`, `functional_sub_elimination_nat`.
-2. **Single-Fold Uniqueness, Signed Recurrences, and Zero-Test Compressions (`DiophantineZQ/SingleFold.lean` & `ReductionAnalysis.lean`):**
-   - `dyadic_exponent_unique`, `packHistory_eq_iff`, `signed_recurrence_iff`, `complement_mask_slot_zero_test`, `single_fold_branch_correct`, `combined_bound_and_zero_test_in_D`, `power_positive_base_iff`, `shared_mask_power_savings`.
-3. **Small TM (`BB2`, `clear`) & `BB(6)` Cryptid (`Antihydra`) Equivalences (`DiophantineZQ/SmallTM.lean` & `Antihydra.lean`):**
-   - `bb2StepPoly_iff_stepTM`, `bb2_halts`, `singleFoldClear_iff` ($2,343 \to 85$ variables), `antihydra_reaches_start_in_12_steps`, `antihydraStepPoly_iff_next`, `antihydra_halts_iff_diophantine`.
-4. **Exact Stage 1–3 Witness Reductions ($292,890,231,904 \to 48,993,319,364$):**
-   - `glazer_total_rat_witnesses_eq`, `stage1_rat_witnesses_eq`, `stage2_rat_witnesses_eq`, `stage3_rat_witnesses_eq`.
+### 4.1 Established Results (Verified with `Mathlib` & `lake comparator`)
+All **58 theorems** in `DiophantineZQ` are checked against `Challenge.lean` via `lake comparator --config=comparator/all.json` (and **26 purely constructive theorems** without `Classical.choice` via `comparator/constructive.json`):
+1. **Multivariate Polynomials, Rational Compilation, Denominator Clearing & Functional Elimination (`DiophantineZQ/Domains.lean`):**
+   - `SingleFoldRepresents.toDiophantine`, `eval_conjoin_eq_zero_iff`, `eval_disjoin_eq_zero_iff`, `eval_compile_eq_zero_iff`, `exists_conjunction_fresh_iff`, `exists_disjunction_fresh_iff`, `commonDenominator_pos`, `exists_integer_multiple`, `exists_integer_equation`, `int_vs_rat_witness_separation`, `eval_hasUnreferencedTail_indep`, `functional_witness_elimination_int`, `functional_sub_elimination_nat`.
+2. **Kummer/Lucas Bitwise-Binomial Macros, Packed Histories, and Zero-Test Compressions (`DiophantineZQ/SingleFold.lean` & `ReductionAnalysis.lean`):**
+   - `choose_odd_iff_land_eq` (via `Choose.choose_modEq_choose_mod_mul_choose_div_nat`), `choose_add_odd_iff_land_eq_zero`, `mask_iff_land_eq`, `orthogonal_iff_land_eq_zero`, `bit_and_iff_land_eq`, `dyadic_exponent_unique`, `dyadic_exponent_exists`, `packHistory_eq_finset_sum`, `packed_register_decode`, `packHistory_eq_iff`, `signed_recurrence_iff`, `complement_mask_slot_zero_test`, `complement_mask_iff_zero_test`, `single_fold_branch_correct`, `disjoint_in_D_mask_iff`, `disjoint_in_D_slot_zero_test`, `combined_bound_and_zero_test_in_D`, `power_positive_base_iff`, `shared_mask_power_savings`.
+3. **Small TM (`BB2`, `clear`) & `BB(6)` Cryptid (`Antihydra`) Existence and Single-Fold Uniqueness (`DiophantineZQ/SmallTM.lean` & `Antihydra.lean`):**
+   - `bb2StepPoly_iff_stepTM`, `bb2StepPoly_unique`, `bb2_halts_in_6`, `bb2_halts`, `singleFoldClear_iff` ($2,343 \to 85$ variables), `singleFoldClear_unique`, `antihydra_reaches_start_in_12_steps`, `antihydraStepPoly_iff_next`, `antihydraStepPoly_unique`, `antihydra_halts_iff_diophantine`.
+4. **Symbolic Parametric & Exact Stage 1–3 Witness Reductions ($292,890,231,904 \to 48,993,319,364$):**
+   - `stage1_power_savings_symbolic`, `stage2_lt_stage1_power_symbolic`, `glazer_baseline_powers_param_eq`, `glazer_stage1_powers_param_eq`, `glazer_stage2_powers_param_eq`, `glazer_total_rat_witnesses_eq`, `glazer_total_nat_vars_eq`, `stage1_rat_witnesses_eq`, `stage2_rat_witnesses_eq`, `stage3_rat_witnesses_eq`, `stage3_rat_savings_eq`.
 
 ### 4.2 Failed Approaches (Tested and Rejected)
 1. **Searching for Unreferenced Existential Witnesses in the Released JSON Artifacts:**
